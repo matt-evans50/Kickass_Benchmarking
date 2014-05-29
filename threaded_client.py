@@ -5,24 +5,24 @@ import time                 # you guessed it
 import random
 import math
 from multiprocessing import Process
+import argparse               # example for using this module: https://docs.python.org/3.4/library/argparse.html#module-argparse
 
-host = 'localhost' # Get local machine name
+host = 'localhost'          # Get local machine name
 port = 8000               # Reserve a port for your service.
 iterations = 2           # number of times each client sends data
 numProcs = 4               # number of processes to run
-
-#inputSize = math.ceil(100*random.paretovariate(2))
+args = None
 
 
 def createHTTPrequest(alpha, randMode):
     # outputs in the format: 'GET http://[number of bytes]
-    if (randMode == 1): # pareto distribution
+    if (randMode == 'pareto'): # pareto distribution
         inputSize = math.ceil(100*random.paretovariate(alpha))
-    elif (randMode == 2): # uniform distribution
+    elif (randMode == 'rand'): # uniform distribution
         inputSize = math.ceil(100*random.randrange(400))
-    elif (randMode == 3): #exponential distribution
+    elif (randMode == 'exp'): #exponential distribution
         inputSize = math.ceil(100*random.expovariate(1/200))
-    return 'GET http://' + str(inputSize)
+    return 'GET http://' + str(int(inputSize))
 
 def createTraffic(alpha, randMode):
     # creates a random number of bytes ('1's)ending in a '0'
@@ -47,11 +47,11 @@ def getWaitTime(meanWaitTime):
 def createClient(iterations, id):
     for i in range(0,iterations):
         s = socket.socket()         # Create a socket object
-        print(str(id) + ' connecting...')
-        s.connect((host, port))
+        print(str(id) + ' connecting to ' + str(args.dest) + ':' + str(args.port) + '...')
+        s.connect((args.dest, args.port))
         print('connection successful.')
         print('send HTTP request:')
-        inputString = createHTTPrequest(2, 1)
+        inputString = createHTTPrequest(2, args.sizeDist)
         print(inputString)
         r=inputString
         start_time = time.time()
@@ -64,10 +64,34 @@ def createClient(iterations, id):
         time.sleep(getWaitTime(1))
 
 
+def handleCommandLineArguments():
+    global args
+
+    parser = argparse.ArgumentParser(description = 'Start threaded client for Kickass testing.')
+    # dest: destination address of server
+    parser.add_argument('-d', '--dest', default='localhost')
+    # port: port to connect to
+    parser.add_argument('-p', '--port', type=int, default=8000)
+    # iterations: the number of times each client sends data
+    parser.add_argument('-i', '--iter', type=int, default=2)
+    # numClients: the number of clients to start up (as separate processes)
+    parser.add_argument('-n', '--numClients', type=int, default=2)
+    # sizeDist: the type of distribution of sizes (pareto, rand, exp)
+    parser.add_argument('--sizeDist', type=str, default='pareto')
+    # waitDist: type of distribution of wait between sends
+    #parser.add_argument('-w', '--wait')
+
+
+    args = parser.parse_args()
+
+
 
 
 if __name__ == '__main__':
-    processes = [Process(target=createClient, args=(iterations, ('client' + str(id))), name=('client' + str(id))) for id in range(0,numProcs) ]
+    # handle command line args, this function will quit program if error in options
+    handleCommandLineArguments()
+
+    processes = [Process(target=createClient, args=(args.iter, ('client' + str(id))), name=('client' + str(id))) for id in range(0,args.numClients) ]
     for p in processes:
         p.start()
     for p in processes:
@@ -76,56 +100,5 @@ if __name__ == '__main__':
 
 
 
-''' steps forward:
 
-client:
-    pick size data chunk
-    wait (rho time)
-    sends
-    [kickass: exponential times, pareto sizes]
-
-implement sizes from 1) uniform (all random)
-                     2) exponential
-                     3) pareto
-
-
-
-NEXT:
-add a number of clients to congest the network
-    Each draws from the same distribution, with different randomly selected parameters
-
-multiprocessing library!
-HTTP requests (GET, ACK, etc.) [there is a python library for this]
-    client: sends request for a URL
-    server: response: k bytes (not really important what it contains)
-
-structure: keep application structure separate
-1) bulk data - threading
-2) http-esque
-
-priorities
-1) threading/multi-processing
-2) HTTP-ish structure
-3) TCP-level information (rate of how fast it was supposed to send at)
-
-
-Data Reporting:
-flow was N bytes long
-log time every k bytes (charts throughput over time)
-total bytes vs. time (visualize how smooth the flow is) [TCP Dump]
-send 100 packets, record time, repeat
-    if time - wireshark/tcp dump creates file called pcap which contains flow info
-    
-
-, threads library may be useful
-    want NO GLOBAL PROCESSING LOCK
-
-
-HTTP Traffic
-
-
-
-Report:
-Diagrams of what we're doing, how it works.
-'''
             
