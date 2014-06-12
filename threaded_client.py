@@ -11,6 +11,7 @@ host = 'localhost'          # Get local machine name
 port = 8000               # Reserve a port for your service.
 iterations = 2           # number of times each client sends data
 numProcs = 4               # number of processes to run
+fileName = 'client-timing-'
 args = None
 
 
@@ -46,6 +47,12 @@ def getWaitTime(meanWaitTime):
 
 def createClient(iterations, id):
     for i in range(0,iterations):
+        goodFile = False
+        try:
+            f = open(fileName + str(id), 'w')
+            goodFile = True
+        except IOError as e:
+            print "I/O error({0}): {1}".format(e.errno, e.strerror) 
         s = socket.socket()         # Create a socket object
         print(str(id) + ' connecting to ' + str(args.dest) + ':' + str(args.port) + '...')
         s.connect((args.dest, args.port))
@@ -61,6 +68,8 @@ def createClient(iterations, id):
         print('elapsed time: ', elapsed)
         s.close()
         print('socket closed')
+        f.write(str(start_time) + '\t' + str(elapsed) + '\t')
+        f.close()
         time.sleep(getWaitTime(1))
 
 
