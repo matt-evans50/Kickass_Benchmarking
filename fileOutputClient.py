@@ -9,12 +9,7 @@ import argparse               # example for using this module: https://docs.pyth
 #import matplotlib.pyplot as plt
 #import numpy as np
 
-host = '129.105.7.79'          # Get local machine name
-port = 8000               # Reserve a port for your service.
-iterations = 2           # number of times each client sends data
-numProcs = 4               # number of processes to run
 fileBase = "kickassBenchmarkingOutput"
-args = None
 
 
 def createHTTPrequest(alpha, randMode):
@@ -44,7 +39,7 @@ def createClient(iterations, id):
         s = socket.socket()         # Create a socket object
         #print(str(id) + ' connecting to ' + str(args.dest) + ':' + str(args.port) + '...')
         #s.setsockopt(socket.IPPTROTO_TCO, 13, "reno")        
-        s.connect((host, args.port))
+        s.connect((args.dest, args.port))
         #print('connection successful.')
         #print('send HTTP request:')
         inputString = createHTTPrequest(2, args.sizeDist)
@@ -72,22 +67,6 @@ def createClient(iterations, id):
         s.close()
         #print('socket closed')
         time.sleep(getWaitTime(1))
-    '''
-    plt.plot(zvals, tvals)
-    plt.xlabel('Number of Packets Transferred (1024B)')
-    plt.ylabel('Elapsed Transmission Time (ms)')
-    plt.title('The Life of a Flow')    
-    plt.axis([0, max(zvals), 0, max(tvals)])
-    #plt.show()    
-    
-    #x = np.arange(xvals)
-    plt.plot(xvals, yvals, linestyle="none", marker=".")
-    plt.xlabel('Number of Bytes Transferred')
-    plt.ylabel('Transmission Time (ms)')
-    plt.title('Transfer Time based on Message Size')    
-    plt.axis([min(xvals), max(xvals), min(yvals), max(yvals)])
-    plt.show()
-    ''' 
     # Print out arrays
     try:
         f = open(fileBase + '-' + str(id), 'w')
